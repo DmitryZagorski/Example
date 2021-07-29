@@ -1,4 +1,4 @@
-package com.Product;
+package com.product;
 
 public class Product {
     private String name;

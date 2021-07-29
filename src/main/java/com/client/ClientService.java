@@ -1,4 +1,4 @@
-package com.Client;
+package com.client;
 
 import com.InterfaceSQL;
 

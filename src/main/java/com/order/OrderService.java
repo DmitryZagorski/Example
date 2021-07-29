@@ -1,8 +1,8 @@
-package com.Order;
+package com.order;
 
-import com.Client.Client;
+import com.client.Client;
 import com.InterfaceSQL;
-import com.Shop.Shop;
+import com.shop.Shop;
 
 import java.io.BufferedReader;
 import java.io.IOException;

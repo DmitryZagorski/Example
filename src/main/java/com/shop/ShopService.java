@@ -1,10 +1,14 @@
-package com.Shop;
+package com.shop;
 
 import com.InterfaceSQL;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -12,43 +16,63 @@ import java.util.List;
 public class ShopService {
 
     private InterfaceSQL interfaceSQL;
-    public ShopService(InterfaceSQL interfaceSQL){
+
+    public ShopService(InterfaceSQL interfaceSQL) {
         this.interfaceSQL = interfaceSQL;
     }
 
-    public void addShop() throws IOException {
+    public void addShop() throws IOException, SQLException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
 
-
-
-
-        System.out.println("Enter the name of the shop, you want to add.");
-        String a = reader.readLine();
-        int count = 0;
-        for (int i = 0; i < shops.size(); i++) {
-            if ((shops.get(i).getName()).equals(a)) {
-                count++;
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the name of the shop you want to add.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.shops where name = '" + shopName + "';");
+            if (resultSet.next()) {
+                System.out.println("Shop with that name already exist.");
+            } else {
+                statement.execute("insert into delivery.shops (name) values ('" + shopName + "');");
+                System.out.println("New shop was added successfully.");
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        if (count == 0) {
-            shops.add(new Shop(a, new ArrayList<>()));
-        }
-        if (count > 0) {
-            System.out.println("That shop already exist.");
-        }
-
-        shopDataBase.writeShopsToFile(shops);
-    }
-
-    public void printShopList() {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        System.out.println("The shop list: ");
-        for (Shop shop : shops) {
-            System.out.println(shop.getName());
+        finally {
+            connection.close();
+            statement.close();
+            resultSet.close();
+            reader.close();
         }
     }
+
+    public void printShopList() throws SQLException {
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("The shop list:");
+            resultSet = statement.executeQuery("select * from delivery.shops;");
+            while (resultSet.next()){
+                System.out.println(resultSet.getInt("id") + resultSet.getString("name"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        finally {
+            connection.close();
+            statement.close();
+            resultSet.close();
+        }
 
     public void addProductsToShop() throws IOException {
         List<Shop> shops = shopDataBase.getShopsFromFile();
@@ -72,25 +96,23 @@ public class ShopService {
                 String[] array = e.split(",");
                 List<String> middleAr = new ArrayList<>();
                 for (int i = 0; i < array.length; i++) {
-                    if (array[i].trim().equals("1")){
+                    if (array[i].trim().equals("1")) {
                         middleAr.add(ProductCategory.food.getName());
                     }
-                    if (array[i].trim().equals("2")){
+                    if (array[i].trim().equals("2")) {
                         middleAr.add(ProductCategory.clothes.getName());
                     }
-                    if (array[i].trim().equals("3")){
+                    if (array[i].trim().equals("3")) {
                         middleAr.add(ProductCategory.other.getName());
-                    }
-                    else  {
+                    } else {
                         System.out.println("Wrong enter. Try one more time.");
                     }
                 }
                 int l = middleAr.size();
                 String[] prCat = new String[l];
                 prCat = middleAr.toArray(prCat);
-                shop.getProductList().add(new Product(b,c,d,prCat));
-            }
-            else {
+                shop.getProductList().add(new Product(b, c, d, prCat));
+            } else {
                 System.out.println("Wrong name.");
             }
         }
@@ -151,7 +173,7 @@ public class ShopService {
             if (a.equals(shop.getName())) {
                 for (int i = 0; i < shop.getProductList().size(); i++) {
                     System.out.println(shop.getProductList().get(i).getName() + " - " + shop.getProductList().get(i).getPrice() + " euro." +
-                            " ("+shop.getProductList().get(i).getCount()+" ones)");
+                            " (" + shop.getProductList().get(i).getCount() + " ones)");
                 }
             }
         }
@@ -166,7 +188,7 @@ public class ShopService {
             if (a2.equals("1")) {
                 List<Shop> shopsByName = new ArrayList<>(shops);
                 for (Shop shop : shopsByName) {
-                    shop.getProductList().sort(Comparator.comparing(com.Product::getPrice).thenComparing(com.Product::getName));
+                    shop.getProductList().sort(Comparator.comparing(com.product::getPrice).thenComparing(com.product::getName));
                 }
                 for (Shop shop : shopsByName) {
                     for (int i = 0; i < shop.getProductList().size(); i++) {
@@ -180,7 +202,7 @@ public class ShopService {
             if (a2.equals("2")) {
                 List<Shop> shopsByName = new ArrayList<>(shops);
                 for (Shop shop : shopsByName) {
-                    shop.getProductList().sort(Comparator.comparing(com.Product::getName).thenComparing(com.Product::getPrice));
+                    shop.getProductList().sort(Comparator.comparing(com.product::getName).thenComparing(com.product::getPrice));
                 }
                 for (Shop shop : shopsByName) {
                     for (int i = 0; i < shop.getProductList().size(); i++) {
@@ -328,19 +350,18 @@ public class ShopService {
         }
     }
 
-    public void printAllProductsInTheShops(){
+    public void printAllProductsInTheShops() {
         List<Shop> shops = shopDataBase.getShopsFromFile();
 
         for (Shop shop : shops) {
             for (Product product : shop.getProductList()) {
-                System.out.println(product.getName() + ", Price: "+ product.getPrice()+" euro"+
-                        ", Count: "+product.getCount() + " ones" +" (" +shop.getName()+")");
+                System.out.println(product.getName() + ", Price: " + product.getPrice() + " euro" +
+                        ", Count: " + product.getCount() + " ones" + " (" + shop.getName() + ")");
             }
         }
     }
 
     //  SQL
-
 
 
 }

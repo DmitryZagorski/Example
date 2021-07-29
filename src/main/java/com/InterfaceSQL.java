@@ -1,6 +1,6 @@
 package com;
 
-import com.Client.Client;
+import com.client.Client;
 
 import java.sql.Connection;
 import java.util.List;

@@ -1,6 +1,6 @@
-package com.Shop;
+package com.shop;
 
-import com.Product.Product;
+import com.product.Product;
 
 import java.util.List;
 

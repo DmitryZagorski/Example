@@ -1,8 +1,8 @@
 package com;
 
-import com.Client.ClientService;
-import com.Order.OrderService;
-import com.Shop.ShopService;
+import com.client.ClientService;
+import com.order.OrderService;
+import com.shop.ShopService;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,6 +1,6 @@
-package com.Order;
+package com.order;
 
-import com.Product.Product;
+import com.product.Product;
 
 public class Order {
     private int id;
