@@ -9,9 +9,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 
 public class ShopService {
 
@@ -42,8 +39,7 @@ public class ShopService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             connection.close();
             statement.close();
             resultSet.close();
@@ -62,308 +58,391 @@ public class ShopService {
             statement = connection.createStatement();
             System.out.println("The shop list:");
             resultSet = statement.executeQuery("select * from delivery.shops;");
-            while (resultSet.next()){
-                System.out.println(resultSet.getInt("id") + resultSet.getString("name"));
+            while (resultSet.next()) {
+                System.out.println(resultSet.getInt("id") + " "+resultSet.getString("name"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            resultSet.close();
         }
-        finally {
+    }
+
+    public void addProductsToShop() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+
+            System.out.println("Enter the name of the shop, where you want to add the product.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.shops where name = '" + shopName + "';");
+            if (resultSet.next()) {
+                System.out.println("Enter the name of product.");
+                String productName = reader.readLine();
+                System.out.println("Enter the price of product.");
+                String productPrice = reader.readLine();
+                System.out.println("Enter the count of product.");
+                String productCount = reader.readLine();
+                statement.execute("insert into delivery.products (name, price, count) values ('" + productName + "'," + productPrice + productCount + ")");
+                statement.execute("insert into delivery.shops_product (shop_name, product_name) values ('" + shopName + "','" + productName + "')");
+                System.out.println("Enter the categories of product throw ','");
+                String productCategory = reader.readLine();
+                String[] array = productCategory.split(",");
+                for (int i = 0; i < array.length; i++) {
+                    if (array[i].trim().equals("1")) {
+                        statement.execute("insert into delivery.categories_products (categories_name, product_name) values ('Food','" + productName + "')");
+                    }
+                    if (array[i].trim().equals("2")) {
+                        statement.execute("insert into delivery.categories_products (categories_name, product_name) values ('Clothes','" + productName + "')");
+                    }
+                    if (array[i].trim().equals("3")) {
+                        statement.execute("insert into delivery.categories_products (categories_name, product_name) values ('Others','" + productName + "')");
+                    } else {
+                        System.out.println("Wrong enter. Try one more time.");
+                    }
+                }
+            } else {
+                System.out.println("That shop doesn't exist.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            reader.close();
+            resultSet.close();
+        }
+    }
+
+    public void deleteShopFromShopList() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the name of the shop, you want to delete.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.shops where name = '" + shopName + "'");
+            if (resultSet.next()) {
+                statement.execute("delete from delivery.shops where name = '" + shopName + "'");
+            } else {
+                System.out.println("That shop isn't exist.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            resultSet.close();
+            reader.close();
+        }
+    }
+
+    public void deleteProductsFromShop() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet1 = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the name of the shop, where you want to delete the product.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.shops where name = '" + shopName + "'");
+            if (resultSet.next()) {
+                System.out.println("Enter the name of product.");
+                String productName = reader.readLine();
+                resultSet1 = statement.executeQuery("select * from delivery.product where shop = '" + shopName + "'");
+                if (resultSet1.next()) {
+                    statement.execute("delete from delivery.products where name = '" + productName + "' and shop = '" + shopName + "';");
+                } else {
+                    System.out.println("Product with such name doesn't exist in that shop.");
+                }
+            } else {
+                System.out.println("That shop doesn't exist.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            resultSet.close();
+            resultSet1.close();
+            reader.close();
+        }
+    }
+
+    public void printProductListInTheShop() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the shop name, where to print the product list.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.products where shop = '" + shopName + "'");
+            if (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                int count = resultSet.getInt("count");
+                int price = resultSet.getInt("price");
+                System.out.println(id + " " + name + price + "euro" + count + "ones");
+                System.out.println("Do you want to sort products?\n" +
+                        "'1' - yes\n" +
+                        "'2' - no");
+                String response = reader.readLine();
+                if (response.equals("1")) {
+                    System.out.println("1 - by price" +
+                            "2 - by name");
+                    if (response.equals("1")) {
+                        ResultSet resultSet1 = statement.executeQuery("select * from delivery.products where shop = '" + shopName + "' order by price;");
+                        int id1 = resultSet1.getInt("id");
+                        String name1 = resultSet1.getString("name");
+                        int count1 = resultSet1.getInt("count");
+                        int price1 = resultSet1.getInt("price");
+                        System.out.println(id1 + name1 + price1 + "euro" + count1 + "ones");
+                    }
+                    if (response.equals("2")) {
+                        ResultSet resultSet2 = statement.executeQuery("select * from delivery.products where shop = '" + shopName + "' order by name;");
+                        int id2 = resultSet2.getInt("id");
+                        String name2 = resultSet2.getString("name");
+                        int count2 = resultSet2.getInt("count");
+                        int price2 = resultSet2.getInt("price");
+                        System.out.println(id2 + name2 + price2 + "euro" + count2 + "ones");
+                    }
+                }
+            } else {
+                System.out.println("That shop doesn't exist.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            resultSet.close();
+            reader.close();
+        }
+    }
+
+    public void changeCountOfProductInTheShop() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the shop name, where to change count of the product.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.products where name = '" + shopName + "'");
+            if (resultSet.next()) {
+                System.out.println("Product name: ");
+                String productName = reader.readLine();
+                ResultSet resultSet1 = statement.executeQuery("select * from delivery.products where name = '" + productName + "'");
+                if (resultSet1.next()) {
+                    System.out.println("Enter new count: ");
+                    String newCount = reader.readLine();
+                    statement.executeUpdate("update delivery.products set count = " + newCount + "");
+                    System.out.println("Count is changed");
+                } else {
+                    System.out.println("That product doesn't exist");
+                }
+            } else {
+                System.out.println("That shop doesn't exist");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            reader.close();
+        }
+    }
+
+    public void changePriceOfProductInTheShop() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the shop name, where to change price of the product.");
+            String shopName = reader.readLine();
+            resultSet = statement.executeQuery("select * from delivery.products where name = '" + shopName + "'");
+            if (resultSet.next()) {
+                System.out.println("Product name: ");
+                String productName = reader.readLine();
+                ResultSet resultSet1 = statement.executeQuery("select * from delivery.products where name = '" + productName + "'");
+                if (resultSet1.next()) {
+                    System.out.println("Enter new price: ");
+                    String newPrice = reader.readLine();
+                    statement.executeUpdate("update delivery.products set price = " + newPrice + "");
+                    System.out.println("Price is changed");
+                } else {
+                    System.out.println("That product doesn't exist");
+                }
+            } else {
+                System.out.println("That shop doesn't exist");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            reader.close();
+        }
+    }
+
+    public void findProductInShopsByName() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("Enter the name of product to find it in the shops.");
+            String productName = reader.readLine();
+            System.out.println("Enter the price to find the product by price or press \"ENTER\" to find only by name.");
+            String productPrice = reader.readLine();
+            if (productPrice.equals("")) {
+                resultSet = statement.executeQuery("select * from delivery.products where name = '" + productName + "'");
+                if (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String name = resultSet.getString("name");
+                    int price = resultSet.getInt("price");
+                    int count = resultSet.getInt("count");
+                    System.out.println(id + " " + name + " " + price + " euro " + count + " ones.");
+                } else {
+                    System.out.println("That product doesn't exist in shops");
+                }
+            } else {
+                resultSet = statement.executeQuery("select * from delivery.products where name = '" + productName + "' & price = " + productPrice + " ");
+                if (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String name = resultSet.getString("name");
+                    int price = resultSet.getInt("price");
+                    int count = resultSet.getInt("count");
+                    System.out.println(id + " " + name + " " + price + " euro " + count + " ones.");
+                } else {
+                    System.out.println("Product with that price doesn't exist.");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            reader.close();
+            resultSet.close();
+        }
+    }
+
+    public void findProductInShopsByProductCategory() throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            System.out.println("\"Enter the product category to find it in the shops.\n" +
+                    "'1' - Food\n" +
+                    "'2' - Clothes\n" +
+                    "'3' - Other");
+            String category = reader.readLine();
+            if (category.equals("1")) {
+                resultSet = statement.executeQuery("select * from delivery.categories_products where categories_name = 'Food';");
+                String productName = resultSet.getString("name");
+                resultSet = statement.executeQuery("select * from delivery.products where name = '" + productName + "'");
+                int id = resultSet.getInt("id");
+                int price = resultSet.getInt("price");
+                int count = resultSet.getInt("count");
+                System.out.println("Products with Food category: " +
+                        "" + id + " " + productName + " " + price + " euro " + count + " ones.");
+            }
+            if (category.equals("2")) {
+                resultSet = statement.executeQuery("select * from delivery.categories_products where categories_name = 'Clothes';");
+                String productName = resultSet.getString("name");
+                resultSet = statement.executeQuery("select * from delivery.products where name = '" + productName + "'");
+                int id = resultSet.getInt("id");
+                int price = resultSet.getInt("price");
+                int count = resultSet.getInt("count");
+                System.out.println("Products with Clothes category: " +
+                        "" + id + " " + productName + " " + price + " euro " + count + " ones.");
+            }
+            if (category.equals("1")) {
+                resultSet = statement.executeQuery("select * from delivery.categories_products where categories_name = 'Other';");
+                String productName = resultSet.getString("name");
+                resultSet = statement.executeQuery("select * from delivery.products where name = '" + productName + "'");
+                int id = resultSet.getInt("id");
+                int price = resultSet.getInt("price");
+                int count = resultSet.getInt("count");
+                System.out.println("Products with Other category: " +
+                        "" + id + " " + productName + " " + price + " euro " + count + " ones.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            connection.close();
+            statement.close();
+            reader.close();
+            resultSet.close();
+        }
+    }
+
+    public void printAllProductsInTheShops() throws SQLException {
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = interfaceSQL.getConnection();
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery("select * from delivery.products;");
+            int id = resultSet.getInt("id");
+            String name = resultSet.getString("name");
+            int price = resultSet.getInt("price");
+            int count = resultSet.getInt("count");
+            System.out.println(id + " " + name + " " +
+                    price + " euro " + count + " ones");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
             connection.close();
             statement.close();
             resultSet.close();
         }
 
-    public void addProductsToShop() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the name of the shop, where you want to add the product.");
-        String a = bufferedReader.readLine();
-        for (Shop shop : shops) {
-            if (a.equals(shop.getName())) {
-                System.out.println("com.Product name: ");
-                String b = bufferedReader.readLine();
-                System.out.println("com.Product price: ");
-                int c = Integer.parseInt(bufferedReader.readLine());
-                System.out.println("com.Product count");
-                int d = Integer.parseInt(bufferedReader.readLine());
-                System.out.println("com.Product Category: \n" +
-                        "1 - Food\n" +
-                        "2 - Clothes\n" +
-                        "3 - Other");
-                String e = bufferedReader.readLine();
-                String[] array = e.split(",");
-                List<String> middleAr = new ArrayList<>();
-                for (int i = 0; i < array.length; i++) {
-                    if (array[i].trim().equals("1")) {
-                        middleAr.add(ProductCategory.food.getName());
-                    }
-                    if (array[i].trim().equals("2")) {
-                        middleAr.add(ProductCategory.clothes.getName());
-                    }
-                    if (array[i].trim().equals("3")) {
-                        middleAr.add(ProductCategory.other.getName());
-                    } else {
-                        System.out.println("Wrong enter. Try one more time.");
-                    }
-                }
-                int l = middleAr.size();
-                String[] prCat = new String[l];
-                prCat = middleAr.toArray(prCat);
-                shop.getProductList().add(new Product(b, c, d, prCat));
-            } else {
-                System.out.println("Wrong name.");
-            }
-        }
-        shopDataBase.writeShopsToFile(shops);
     }
-
-    public void deleteShopFromShopList() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the name of the shop, you want to delete.");
-        String a = reader.readLine();
-        int count = 0;
-        for (Shop shop : shops) {
-            if (a.equals(shop.getName())) {
-                shops.remove(shop);
-                count++;
-            }
-        }
-        if (count == 0) {
-            System.out.println("That shop isn't exist.");
-        }
-        shopDataBase.writeShopsToFile(shops);
-    }
-
-    public void deleteProductsFromShop() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the name of the shop, where you want to delete the product.");
-        String a = bufferedReader.readLine();
-        for (Shop shop : shops) {
-            if (a.equals(shop.getName())) {
-                System.out.println("com.Product name: ");
-                String b = bufferedReader.readLine();
-                int count = 0;
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    if ((shop.getProductList().get(i).getName()).equals(b)) {
-                        shop.getProductList().remove(i);
-                        count++;
-                    }
-                }
-                if (count == 0) {
-                    System.out.println("com.Product with such name doesn't exist in that list.");
-                }
-            }
-        }
-        shopDataBase.writeShopsToFile(shops);
-    }
-
-    public void printProductListInTheShop() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the shop name, where to print the product list.");
-        String a = bf.readLine();
-        for (Shop shop : shops) {
-            if (a.equals(shop.getName())) {
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    System.out.println(shop.getProductList().get(i).getName() + " - " + shop.getProductList().get(i).getPrice() + " euro." +
-                            " (" + shop.getProductList().get(i).getCount() + " ones)");
-                }
-            }
-        }
-        System.out.println("Do you want to sort products?\n" +
-                "'1' - yes\n" +
-                "'2' - no");
-        String a1 = bf.readLine();
-        if (a1.equals("1")) {
-            System.out.println("'1' - by price\n" +
-                    "'2' - by name");
-            String a2 = bf.readLine();
-            if (a2.equals("1")) {
-                List<Shop> shopsByName = new ArrayList<>(shops);
-                for (Shop shop : shopsByName) {
-                    shop.getProductList().sort(Comparator.comparing(com.product::getPrice).thenComparing(com.product::getName));
-                }
-                for (Shop shop : shopsByName) {
-                    for (int i = 0; i < shop.getProductList().size(); i++) {
-                        System.out.println(shop.getProductList().get(i).getName() + "\n" +
-                                " : " + shop.getProductList().get(i).getPrice() + " dollars" + "\n" +
-                                " : " + shop.getProductList().get(i).getCount() + " ones" + "\n" +
-                                " ( " + shop.getName() + " ) " + "\n");
-                    }
-                }
-            }
-            if (a2.equals("2")) {
-                List<Shop> shopsByName = new ArrayList<>(shops);
-                for (Shop shop : shopsByName) {
-                    shop.getProductList().sort(Comparator.comparing(com.product::getName).thenComparing(com.product::getPrice));
-                }
-                for (Shop shop : shopsByName) {
-                    for (int i = 0; i < shop.getProductList().size(); i++) {
-                        System.out.println(shop.getProductList().get(i).getName() + "\n" +
-                                " : " + shop.getProductList().get(i).getPrice() + " dollars" + "\n" +
-                                " : " + shop.getProductList().get(i).getCount() + " ones" + "\n" +
-                                " ( " + shop.getProductList().get(i).getName() + " ) " + "\n");
-                    }
-                }
-            }
-        }
-    }
-
-    public void changePriceOfProductInTheShop() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the shop name, where to change price of the product.");
-        String a = reader.readLine();
-        for (Shop shop : shops) {
-            if (shop.getName().equals(a)) {
-                System.out.println("com.Product name:");
-                String b = reader.readLine();
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    if (b.equals(shop.getProductList().get(i).getName())) {
-                        System.out.println("Enter new price.");
-                        int c = Integer.parseInt(reader.readLine());
-                        shop.getProductList().get(i).setPrice(c);
-                        System.out.println("Price is changed.");
-                    }
-                }
-            }
-        }
-        shopDataBase.writeShopsToFile(shops);
-    }
-
-    public void changeCountOfProductInTheShop() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the shop name, where to change count of the product.");
-        String a = reader.readLine();
-        for (Shop shop : shops) {
-            if (shop.getName().equals(a)) {
-                System.out.println("com.Product name:");
-                String b = reader.readLine();
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    if (b.equals(shop.getProductList().get(i).getName())) {
-                        System.out.println("Enter new count.");
-                        int c = Integer.parseInt(reader.readLine());
-                        shop.getProductList().get(i).setCount(c);
-                        System.out.println("Count is changed.");
-                    }
-                }
-            }
-        }
-        shopDataBase.writeShopsToFile(shops);
-    }
-
-    public void findProductInShopsByName() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Enter the name of product to find it in the shops.");
-        String a = reader.readLine();
-        System.out.println("Enter the price to find the product by price or press \"ENTER\" to find only by name.");
-        String b = reader.readLine();
-        if (b.equals("")) {
-            for (Shop shop : shops) {
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    if ((shop.getProductList().get(i).getName()).equals(a)) {
-                        System.out.println(shop.getProductList().get(i).getName() + " - "
-                                + shop.getProductList().get(i).getPrice() + " dollars" + " ( " +
-                                shop.getProductList().get(i).getCount() + " ones" + " )" +
-                                " :: " + shop.getName());
-                    }
-                }
-            }
-        } else {
-            int c = Integer.parseInt(b);
-            for (Shop shop : shops) {
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    if (shop.getProductList().get(i).getName().equals(a) &&
-                            shop.getProductList().get(i).getPrice() == c) {
-                        System.out.println(shop.getProductList().get(i).getName() + " - "
-                                + shop.getProductList().get(i).getPrice() + " dollars" +
-                                shop.getProductList().get(i).getCount() + " ones");
-                    }
-                }
-            }
-        }
-
-    }
-
-    public void findProductInShopsByProductCategory() throws IOException {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("\"Enter the product category to find it in the shops.\n" +
-                "'1' - Food\n" +
-                "'2' - Clothes\n" +
-                "'3' - Other");
-        String a = reader.readLine();
-        if (a.equals("1")) {
-            for (Shop shop : shops) {
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    for (int j = 0; j < shop.getProductList().get(i).getProductCategory().length; j++) {
-                        if (shop.getProductList().get(i).getProductCategory()[j].equals("Food")) {
-                            System.out.println(shop.getName() + "\n" +
-                                    " : " + shop.getProductList().get(i).getName() + "\n" +
-                                    " - " + shop.getProductList().get(i).getPrice() + " dollars" + "\n" +
-                                    " - " + shop.getProductList().get(i).getCount() + " ones " + "\n");
-                        }
-                    }
-                }
-            }
-        }
-        if (a.equals("2")) {
-            for (Shop shop : shops) {
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    for (int j = 0; j < shop.getProductList().get(i).getProductCategory().length; j++) {
-                        if (shop.getProductList().get(i).getProductCategory()[j].equals("Clothes")) {
-                            System.out.println(shop.getName() + "\n" +
-                                    " : " + shop.getProductList().get(i).getName() + "\n" +
-                                    " - " + shop.getProductList().get(i).getPrice() + " dollars" + "\n" +
-                                    " - " + shop.getProductList().get(i).getCount() + " ones " + "\n");
-                        }
-                    }
-                }
-            }
-        }
-        if (a.equals("3")) {
-            for (Shop shop : shops) {
-                for (int i = 0; i < shop.getProductList().size(); i++) {
-                    for (int j = 0; j < shop.getProductList().get(i).getProductCategory().length; j++) {
-                        if (shop.getProductList().get(i).getProductCategory()[j].equals("Other")) {
-                            System.out.println(shop.getName() + "\n" +
-                                    " : " + shop.getProductList().get(i).getName() + "\n" +
-                                    " - " + shop.getProductList().get(i).getPrice() + " dollars" + "\n" +
-                                    " - " + shop.getProductList().get(i).getCount() + " ones " + "\n");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void printAllProductsInTheShops() {
-        List<Shop> shops = shopDataBase.getShopsFromFile();
-
-        for (Shop shop : shops) {
-            for (Product product : shop.getProductList()) {
-                System.out.println(product.getName() + ", Price: " + product.getPrice() + " euro" +
-                        ", Count: " + product.getCount() + " ones" + " (" + shop.getName() + ")");
-            }
-        }
-    }
-
-    //  SQL
-
-
 }
 
 
