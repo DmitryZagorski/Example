@@ -21,9 +21,9 @@ public class SQLConnector implements InterfaceSQL {
             } else {
                 connection = DriverManager.getConnection(URL, NAME, PASSWORD);
 
-                if (!connection.isClosed()) {
+                /*if (!connection.isClosed()) {
                     System.out.println("...connected to SQL...");
-                }
+                }*/
             }
         } catch (SQLException e) {
             e.printStackTrace();

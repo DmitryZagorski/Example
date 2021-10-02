@@ -26,7 +26,7 @@ public class App {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Hello!\n" +
-                "To add the order you should add a new com.Client.\n" +
+                "To add the order you should add a new client.\n" +
                 "Press '1' if you are the manager.\n" +
                 "Press '2' if you are the client.");
         String a = reader.readLine();

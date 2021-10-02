@@ -21,28 +21,24 @@ public class ShopService {
     public void addShop() throws IOException, SQLException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
+        try(Connection connection = interfaceSQL.getConnection();
+            Statement statement = connection.createStatement()){
+            ResultSet resultSet = null;
 
         try {
-            connection = interfaceSQL.getConnection();
-            statement = connection.createStatement();
             System.out.println("Enter the name of the shop you want to add.");
             String shopName = reader.readLine();
             resultSet = statement.executeQuery("select * from delivery.shops where name = '" + shopName + "';");
             if (resultSet.next()) {
                 System.out.println("Shop with that name already exist.");
             } else {
-                statement.execute("insert into delivery.shops (name) values ('" + shopName + "');");
+                statement.executeUpdate("insert into delivery.shops (name) values ('" + shopName + "');");
                 System.out.println("New shop was added successfully.");
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
         } finally {
-            connection.close();
-            statement.close();
-            resultSet.close();
             reader.close();
         }
     }
@@ -64,9 +60,9 @@ public class ShopService {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            connection.close();
-            statement.close();
             resultSet.close();
+            statement.close();
+            connection.close();
         }
     }
 
@@ -428,18 +424,20 @@ public class ShopService {
             connection = interfaceSQL.getConnection();
             statement = connection.createStatement();
             resultSet = statement.executeQuery("select * from delivery.products;");
-            int id = resultSet.getInt("id");
-            String name = resultSet.getString("name");
-            int price = resultSet.getInt("price");
-            int count = resultSet.getInt("count");
-            System.out.println(id + " " + name + " " +
-                    price + " euro " + count + " ones");
+            if (resultSet.next()){
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                int price = resultSet.getInt("price");
+                int count = resultSet.getInt("count");
+                System.out.println(id + " " + name + " " +
+                        price + " euro " + count + " ones");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            connection.close();
-            statement.close();
             resultSet.close();
+            statement.close();
+            connection.close();
         }
 
     }
